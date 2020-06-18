@@ -65,3 +65,18 @@ class Grid(BaseComponent):
             for square in row:
                 square.draw(screen)
         return True
+
+
+class GridLineComponent(BaseComponent):
+    def __init__(self, *args, grid=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.grid = grid
+
+    def on_draw(self, screen):
+        for ix, row in enumerate(self.grid.grid):
+            for square in row:
+                if ix == len(self.grid.grid) - 1:
+                    pygame.draw.line(screen, GREY, (square.x, 0), (square.x, self.game.height))
+            _y = ix * self.grid.bwidth
+            pygame.draw.line(screen, GREY, (0, _y), (self.game.width, _y))
+        return True

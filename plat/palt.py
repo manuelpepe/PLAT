@@ -8,7 +8,7 @@ from typing import List
 
 from components import BaseComponent, InteractiveComponent, GridSizeComponent, ArrowComponent
 from states import GameState, EditState, State
-from grid import Grid
+from grid import Grid, GridLineComponent
 from utils import *
 
 
@@ -111,6 +111,7 @@ states = [
     EditState(g, children=[
         grid,
         GridSizeComponent(g, grid=grid),
+        GridLineComponent(g, grid=grid),
         arrow,
     ]),
     GameState(g, children=[
