@@ -6,10 +6,12 @@ import logging
 
 from typing import List
 
-from components import BaseComponent, ArrowComponent
-from states import GameState, EditState, State
-from grid import Grid, GridLineComponent, GridSizeComponent
-from utils import *
+from plat.core.grid import Grid
+from plat.states import GameState, EditState, State
+from plat.components.player import ArrowComponent
+from plat.components.grid import GridLineComponent, GridSizeComponent
+
+from plat.core.utils import *
 
 
 pygame.init()
@@ -123,4 +125,6 @@ states = [
     ])
 ]
 
+print('GO')
 g.run(states)
+print('END')
