@@ -14,3 +14,12 @@ COLORS = [
 	BLUE,
 	GREY,
 ]
+
+
+JOYBTN = {
+    'X': 0,
+    'A': 1,
+    'B': 2,
+    'Y': 3,
+    'SHARE': 8
+}

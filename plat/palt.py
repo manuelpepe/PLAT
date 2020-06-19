@@ -6,9 +6,9 @@ import logging
 
 from typing import List
 
-from components import BaseComponent, InteractiveComponent, GridSizeComponent, ArrowComponent
+from components import BaseComponent, ArrowComponent
 from states import GameState, EditState, State
-from grid import Grid, GridLineComponent
+from grid import Grid, GridLineComponent, GridSizeComponent
 from utils import *
 
 
@@ -23,9 +23,6 @@ if len(sys.argv) > 1 and sys.argv[1] == 'v':
     logger.setLevel(logging.DEBUG)
 
 FPS = 60
-JOYBTN = {
-    'Y': 3
-}
 
 
 class Game:
@@ -59,6 +56,9 @@ class Game:
         else:
             raise ValueError(f'Unkown state {value}')
 
+    def do_update(self):
+        self.state.update()
+
     def do_event(self):
         while event := pygame.event.poll():
             if event.type == pygame.JOYAXISMOTION:
@@ -71,10 +71,10 @@ class Game:
                 if event.button == JOYBTN['Y']:
                     self.next_state()
 
-            self.state._on_event(event)
+            self.state.event(event)
 
     def do_draw(self):
-        self.state._on_draw(self.screen)
+        self.state.draw(self.screen)
         pygame.display.flip()
 
     def joy(self):
@@ -98,20 +98,23 @@ class Game:
         self.running = True
         self.joy()
         while self.running:
-            self.do_event()
-            self.do_draw()
             self.clock.tick(FPS)
+            self.do_event()
+            self.do_update()
+            self.do_draw()
 
 g = Game(800, 800)
 
 grid = Grid(g)
-arrow = ArrowComponent(g)
+gl = GridLineComponent(g, grid=grid)
+gs = GridSizeComponent(g, grid=grid)
+arrow = ArrowComponent(g, grid=grid)
 
 states = [
     EditState(g, children=[
         grid,
-        GridSizeComponent(g, grid=grid),
-        GridLineComponent(g, grid=grid),
+        gl,
+        gs,
         arrow,
     ]),
     GameState(g, children=[
