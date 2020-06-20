@@ -5,11 +5,16 @@ from plat.core.components import BaseComponent
 from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, JumpFromSquareMixin
 from plat.core.utils import *
 
+from plat.config import *
+
 
 class ArrowComponent(JoyMoverMixin, BaseComponent):
     """ Arrow moved by the player in Edit Mode """
     SIZE = 10
+    FRICTION = ARROW_FRICTION
     FRICTION_AXIS = JoyMoverMixin.AXIS_BOTH
+    ACCELERATION = False
+    JOY_SPEED = pygame.Vector2(ARROW_JOY_SPEED)
 
     def __init__(self, *args, grid=None, **kwargs):
         self.grid = grid
@@ -41,8 +46,13 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
 class Player(JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
     SIZE = 10
-    JOY_SPEED = pygame.Vector2(2, 0)
+    JOY_SPEED = pygame.Vector2(PLAYER_JOY_SPEED)
     
+    FRICTION = PLAYER_FRICTION
+    MAX_JUMP = PLAYER_MAX_JUMP
+    JUMP_FORCE = PLAYER_JUMP_FORCE
+    GRAVITY = PLAYER_GRAVITY
+
     def __init__(self, *args, grid=None, **kwargs):
         self.grid = grid
         super().__init__(*args, **kwargs)
@@ -61,3 +71,4 @@ class Player(JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
             if hit.color == RED:
                 self.pos = (self.pos.x, hit.rect.top)
                 self.velocity.y = 0
+                self.jumping = False

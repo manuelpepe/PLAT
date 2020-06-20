@@ -9,16 +9,16 @@ from pygame.sprite import Sprite, Group
 from plat.core.utils import *
 from plat.core.components import BaseComponent
 
-
 class MoverMixin:
     """ Call self.calculate_newpos() on child update method. """
     AXIS_X = 1
     AXIS_Y = 2
     AXIS_BOTH = 3
+    AXIS_NONE = 4
 
     FRICTION = -0.16
     FRICTION_AXIS = AXIS_X
-    
+
     def new(self):
         super().new()
         self.velocity = Vector2(0, 0)
@@ -29,6 +29,7 @@ class MoverMixin:
         self.acceleration = self._calculate_acceleration()
         self.velocity = self._calculate_velocity()
         self.pos = self._calculate_position()
+        print(self)
 
     def _calculate_acceleration(self) -> Vector2:
         """ Returns new acceleration in current update """
@@ -51,12 +52,15 @@ class MoverMixin:
         return self.velocity + self.acceleration
 
     def _calculate_position(self):
-        return self.pos + self.velocity + 0.5 * self.acceleration
+        if self.FRICTION_AXIS != self.AXIS_NONE:
+            return self.pos + self.velocity + 0.5 * self.acceleration
+        else:
+            return self.pos + self.velocity
 
 
 class JoyMoverMixin(MoverMixin):
     JOY_SPEED = Vector2(2, 2)
-    AXIS_DEADZONE = 0.12
+    AXIS_DEADZONE = 0.30
     FRICTION = -0.5
 
     def new(self):
@@ -90,25 +94,39 @@ class CollisionMixin:
 
 
 class JumpMixin(MoverMixin, BaseComponent):
+    MAX_JUMP = 3
+    JUMP_FORCE = 4
+
     def on_event(self, event):
-        print(' mixin event')
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == JOYBTN['A']:
+                self.start_jump()
         if event.type == pygame.JOYBUTTONUP:
             if event.button == JOYBTN['A']:
-                self.jump()
+                self.end_jump()
 
-    def jump(self):
-        self.velocity.y = -3
+
+    def start_jump(self):
+        self.jumping = True
+        self.velocity.y = -self.JUMP_FORCE
+
+    def end_jump(self):
+        if self.jumping:
+            if self.velocity.y < -self.MAX_JUMP:
+                self.velocity.y = -self.MAX_JUMP
 
 
 class JumpFromSquareMixin(JumpMixin, CollisionMixin):
+    def new(self):
+        super().new()
+        self.jumping = False
+
+    def start_jump(self):
+        if self.is_on_plat():
+            super().start_jump()
+
     def is_on_plat(self):
         self.rect.y += 1
         hits = self.get_collissions()
         self.rect.y -= 1
-        for hit in hits:
-            if hit.color == RED:
-                return True
-
-    def jump(self):
-        if self.is_on_plat():
-            super().jump()
+        return any(h.color == RED for h in hits)
