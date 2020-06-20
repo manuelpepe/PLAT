@@ -1,6 +1,9 @@
 import logging
 
+from typing import List
+
 from pygame.math import Vector2
+from pygame.sprite import Sprite, Group
 
 from plat.core.utils import *
 
@@ -78,3 +81,8 @@ class GravityMixin(MoverMixin):
     def new(self):
         super().new()
         self.base_acceleration = (0, self.GRAVITY)
+
+
+class CollisionMixin:
+    def get_collissions(self) -> List[Sprite]:
+        return []

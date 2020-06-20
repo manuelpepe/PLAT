@@ -1,8 +1,17 @@
 from plat.core.states import State
+from plat.components.player import ArrowComponent, Player
+from plat.components.grid import GridLineComponent, GridSizeComponent
 
 
 class GameState(State):
-	pass
-	
+    COMPONENTS = [
+        Player,
+    ]
+
+
 class EditState(State):
-    pass
+    COMPONENTS = [
+        GridLineComponent,
+        GridSizeComponent,
+        ArrowComponent,
+    ]

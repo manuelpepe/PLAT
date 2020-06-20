@@ -1,20 +1,27 @@
 import logging
-import pygame
-from plat.core.components import BaseComponent
+from plat.core.components import BaseComponent, SpriteGroup
 
 
 class State:
-    def __init__(self, game, children: list = None):
-        children = children or []
+    COMPONENTS = None
+
+    def __init__(self, game, grid):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.game = game
-        self.children = pygame.sprite.Group()
-        for c in children:
-            self.children.add(c)
+        self.grid = grid
+        self.children = SpriteGroup()
+        self._init_components()
+
+    def _init_components(self):
+        if not self.COMPONENTS:
+            raise RuntimeError('Empty state')
+        self.children.add(self.grid)
+        for c in self.COMPONENTS:
+            self.children.add(c(self.game, grid=self.grid))
 
     def start(self):
         pass
-    
+
     def end(self):
         pass
     

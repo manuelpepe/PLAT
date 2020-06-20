@@ -1,23 +1,22 @@
-import pygame
 import logging
 
 from typing import List
 from collections import namedtuple
 
 from pygame.math import Vector2
+from pygame.sprite import Group, Sprite
 
 from plat.core.utils import *
 
-class BaseComponent(pygame.sprite.Sprite):
+class BaseComponent(Sprite):
 
-    def __init__(self, game, children: List[pygame.sprite.Sprite] = None):
+    def __init__(self, game, children: List[Sprite] = None):
         children = children or []
-        pygame.sprite.Sprite.__init__(self)
+        Sprite.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.game = game
         self.image, self.rect = self.get_attrs()
-        print(self.rect.midbottom)
-        self.children = pygame.sprite.Group()
+        self.children = SpriteGroup()
         for child in children:
             self.children.add(child) 
         self.new()
@@ -51,3 +50,36 @@ class BaseComponent(pygame.sprite.Sprite):
 
     def on_update(self):
         pass
+
+
+
+class SpriteGroup:
+    ALL_SPRITES = Group()
+
+    def __init__(self):
+        self.groups = {
+            'all': Group()
+        }
+        self.sprites = Group()
+
+    def add(self, sprite: Sprite):
+        self.ALL_SPRITES.add(sprite)
+        self.sprites.add(sprite)
+
+    def update(self):
+        self.sprites.update()
+
+    def draw(self, screen):
+        self.sprites.draw(screen)
+
+    def empty(self):
+        return self.sprites.empty()
+
+    def check_player_collided(self):
+        pass #pygame.sprite.spritecollide(self.PLAYER, self.)
+
+    def __iter__(self):
+        return self.sprites.__iter__()
+
+    def __len__(self):
+        return len(self.sprites)

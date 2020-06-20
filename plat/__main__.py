@@ -7,9 +7,8 @@ import logging
 from typing import List
 
 from plat.core.grid import Grid
+from plat.core.components import SpriteGroup
 from plat.states import GameState, EditState, State
-from plat.components.player import ArrowComponent, Player
-from plat.components.grid import GridLineComponent, GridSizeComponent
 
 from plat.core.utils import *
 from plat.config import FPS
@@ -43,7 +42,7 @@ class Game:
         self.joystick = None
         self.joy()
 
-        self.states = None
+        self._states = None
         self._cur_state = None
 
     @property
@@ -56,6 +55,15 @@ class Game:
             self._cur_state = value
         else:
             raise ValueError(f'Unkown state {value}')
+
+    @property
+    def states(self):
+        return self._states
+    
+    @states.setter
+    def states(self, states):
+        self._states = states
+        self.state = 0
 
     def do_update(self):
         self.state.update()
@@ -86,18 +94,14 @@ class Game:
         self.joystick = pygame.joystick.Joystick(0)
         self.joystick.init()
 
-    def set_states(self, states):
-        self.states = states
-        self.state = 0
-
     def next_state(self):
         self.state.end()
         self._cur_state = (self._cur_state + 1) % len(self.states)
         self.state.start()
 
     def run(self, states):
-        self.set_states(states)
         logger.info('Starting')
+        self.states = states
         self.running = True
         self.joy()
         while self.running:
@@ -106,27 +110,11 @@ class Game:
             self.do_update()
             self.do_draw()
 
-g = Game(800, 800)
+game = Game(800, 800)
+grid = Grid(game)
+states = [EditState(game, grid), GameState(game, grid)]
 
-grid = Grid(g)
-gl = GridLineComponent(g, grid=grid)
-gs = GridSizeComponent(g, grid=grid)
-arrow = ArrowComponent(g, grid=grid)
-player = Player(g, grid=grid)
-
-states = [
-    EditState(g, children=[
-        grid,
-        gl,
-        gs,
-        arrow,
-    ]),
-    GameState(g, children=[
-        grid,
-        player,
-    ])
-]
 
 print('GO')
-g.run(states)
+game.run(states)
 print('END')
