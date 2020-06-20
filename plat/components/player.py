@@ -2,7 +2,7 @@ import logging
 import pygame
 
 from plat.core.components import BaseComponent
-from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin
+from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, JumpFromSquareMixin
 from plat.core.utils import *
 
 
@@ -27,7 +27,7 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
             sq = self.grid.get_square(*self.pos, 2)
             if event.button == JOYBTN['Y']:
                 print(sq)
-            elif event.button == JOYBTN['B']:
+            elif event.button == JOYBTN['A']:
                 sq.color = WHITE
             elif event.button == JOYBTN['X']:
                 sq.color = RED
@@ -38,7 +38,7 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
         self.calculate_newpos()
 
 
-class Player(CollisionMixin, GravityMixin, JoyMoverMixin, BaseComponent):
+class Player(JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
     SIZE = 10
     JOY_SPEED = pygame.Vector2(2, 0)
@@ -55,11 +55,9 @@ class Player(CollisionMixin, GravityMixin, JoyMoverMixin, BaseComponent):
         return image, rect
 
     def on_update(self):
-        print(self)
         self.calculate_newpos()
         hits = self.get_collissions()
         for hit in hits:
             if hit.color == RED:
                 self.pos = (self.pos.x, hit.rect.top)
                 self.velocity.y = 0
-                print(self)

@@ -79,7 +79,7 @@ class Game:
             if event.type == pygame.JOYBUTTONDOWN:
                 if event.button == JOYBTN['Y']:
                     self.next_state()
-                if event.button == JOYBTN['A']:
+                if event.button == JOYBTN['B']:
                     breakpoint()
 
 
@@ -108,7 +108,6 @@ class Game:
         self.running = True
         self.joy()
         while self.running:
-            print('NewFrame')
             self.do_event()
             self.do_update()
             self.do_draw()

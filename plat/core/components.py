@@ -49,7 +49,7 @@ class BaseComponent(Sprite):
     def event(self, event):
         self.on_event(event)
         for child in self.children:
-            child.on_event(event)
+            child.event(event)
 
     def on_event(self, event):
         pass

@@ -7,6 +7,7 @@ from pygame.math import Vector2
 from pygame.sprite import Sprite, Group
 
 from plat.core.utils import *
+from plat.core.components import BaseComponent
 
 
 class MoverMixin:
@@ -84,16 +85,30 @@ class GravityMixin(MoverMixin):
 
 
 class CollisionMixin:
-    def new(self):
-        super().new()
-        self._megroup = None
-
-    def _get_me_group(self) -> Group:
-        if not self._megroup:
-            self._megroup = Group()
-            self._megroup.add(self)
-        return self._megroup
-
     def get_collissions(self) -> List[Sprite]:
-        me = self._get_me_group()
         return pygame.sprite.spritecollide(self, self.game.state.grid.children.sprites, False) 
+
+
+class JumpMixin(MoverMixin, BaseComponent):
+    def on_event(self, event):
+        print(' mixin event')
+        if event.type == pygame.JOYBUTTONUP:
+            if event.button == JOYBTN['A']:
+                self.jump()
+
+    def jump(self):
+        self.velocity.y = -3
+
+
+class JumpFromSquareMixin(JumpMixin, CollisionMixin):
+    def is_on_plat(self):
+        self.rect.y += 1
+        hits = self.get_collissions()
+        self.rect.y -= 1
+        for hit in hits:
+            if hit.color == RED:
+                return True
+
+    def jump(self):
+        if self.is_on_plat():
+            super().jump()
