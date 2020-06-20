@@ -20,3 +20,16 @@ This projects requires python3.6+ and a joystick controller to play.
 	venv\Scripts\activate
 	pip install -r requirements.txt
 	python plat
+
+## Controls
+
+### General
+
+Left Stick: Movement
+Y: Change state from level creation to gameplay.
+
+### Level Creation
+
+X: Place block
+B: breakpoint() (debugging)
+SHARE: Reset grid

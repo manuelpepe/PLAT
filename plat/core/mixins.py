@@ -126,6 +126,9 @@ class JumpFromSquareMixin(JumpMixin, CollisionMixin):
             super().start_jump()
 
     def is_on_plat(self):
+        print(self.game.state.grid.height)
+        if self.pos.y == self.game.state.grid.height:
+            return True
         self.rect.y += 1
         hits = self.get_collissions()
         self.rect.y -= 1
