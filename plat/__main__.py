@@ -8,10 +8,11 @@ from typing import List
 
 from plat.core.grid import Grid
 from plat.states import GameState, EditState, State
-from plat.components.player import ArrowComponent
+from plat.components.player import ArrowComponent, Player
 from plat.components.grid import GridLineComponent, GridSizeComponent
 
 from plat.core.utils import *
+from plat.config import FPS
 
 
 pygame.init()
@@ -23,8 +24,6 @@ logger.setLevel(logging.INFO)
 
 if len(sys.argv) > 1 and sys.argv[1] == 'v':
     logger.setLevel(logging.DEBUG)
-
-FPS = 60
 
 
 class Game:
@@ -92,7 +91,9 @@ class Game:
         self.state = 0
 
     def next_state(self):
+        self.state.end()
         self._cur_state = (self._cur_state + 1) % len(self.states)
+        self.state.start()
 
     def run(self, states):
         self.set_states(states)
@@ -111,6 +112,7 @@ grid = Grid(g)
 gl = GridLineComponent(g, grid=grid)
 gs = GridSizeComponent(g, grid=grid)
 arrow = ArrowComponent(g, grid=grid)
+player = Player(g, grid=grid)
 
 states = [
     EditState(g, children=[
@@ -121,7 +123,7 @@ states = [
     ]),
     GameState(g, children=[
         grid,
-        arrow,
+        player,
     ])
 ]
 

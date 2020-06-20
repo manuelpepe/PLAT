@@ -5,14 +5,19 @@ from plat.core.components import BaseComponent
 
 class State:
     def __init__(self, game, children: list = None):
+        children = children or []
         self.logger = logging.getLogger(self.__class__.__name__)
         self.game = game
-        g = pygame.sprite.Group()
-        children = children or []
+        self.children = pygame.sprite.Group()
         for c in children:
-            g.add(c)
-        self.children = g
+            self.children.add(c)
 
+    def start(self):
+        pass
+    
+    def end(self):
+        pass
+    
     def event(self, event):
         for child in self.children:
             child.event(event)

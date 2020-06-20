@@ -1,26 +1,34 @@
+import pygame
 import logging
+
+from typing import List
 from collections import namedtuple
 
-import pygame
 from pygame.math import Vector2
 
 from plat.core.utils import *
 
 class BaseComponent(pygame.sprite.Sprite):
 
-    def __init__(self, game, children: list = None):
+    def __init__(self, game, children: List[pygame.sprite.Sprite] = None):
+        children = children or []
         pygame.sprite.Sprite.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.game = game
         self.image, self.rect = self.get_attrs()
-
-        children = children or []
-        g = pygame.sprite.Group()
-        for c in children:
-            g.add(c)
-        self.children = g
-
+        print(self.rect.midbottom)
+        self.children = pygame.sprite.Group()
+        for child in children:
+            self.children.add(child) 
         self.new()
+
+    @property
+    def pos(self):
+        return self.rect.midbottom[0], self.rect.midbottom[1]
+
+    @pos.setter
+    def pos(self, xypair):
+        self.rect.midbottom = xypair
 
     def get_attrs(self):
         raise NotImplementedError()
