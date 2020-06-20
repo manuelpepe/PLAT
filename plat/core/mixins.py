@@ -1,4 +1,5 @@
 import logging
+import pygame
 
 from typing import List
 
@@ -18,6 +19,7 @@ class MoverMixin:
     FRICTION_AXIS = AXIS_X
     
     def new(self):
+        super().new()
         self.velocity = Vector2(0, 0)
         self.base_acceleration = (0, 0)
         self.acceleration = Vector2(self.base_acceleration)
@@ -26,8 +28,6 @@ class MoverMixin:
         self.acceleration = self._calculate_acceleration()
         self.velocity = self._calculate_velocity()
         self.pos = self._calculate_position()
-        print(self.acceleration, self.velocity, self.pos)
-
 
     def _calculate_acceleration(self) -> Vector2:
         """ Returns new acceleration in current update """
@@ -77,12 +77,23 @@ class JoyMoverMixin(MoverMixin):
 
 
 class GravityMixin(MoverMixin):
-    GRAVITY = 2
+    GRAVITY = 0.1
     def new(self):
         super().new()
         self.base_acceleration = (0, self.GRAVITY)
 
 
 class CollisionMixin:
+    def new(self):
+        super().new()
+        self._megroup = None
+
+    def _get_me_group(self) -> Group:
+        if not self._megroup:
+            self._megroup = Group()
+            self._megroup.add(self)
+        return self._megroup
+
     def get_collissions(self) -> List[Sprite]:
-        return []
+        me = self._get_me_group()
+        return pygame.sprite.spritecollide(self, self.game.state.grid.children.sprites, False) 

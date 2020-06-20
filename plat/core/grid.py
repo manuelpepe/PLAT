@@ -51,6 +51,9 @@ class Square(BaseComponent):
     def y(self):
         return self.r * self.height
 
+    def __repr__(self):
+        return f"<Square x={self.x} y={self.y} c={self.c} r={self.r} color={self.color}>"
+
 
 class Grid(BaseComponent):
     ROWCOLS = 1

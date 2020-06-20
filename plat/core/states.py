@@ -19,6 +19,15 @@ class State:
         for c in self.COMPONENTS:
             self.children.add(c(self.game, grid=self.grid))
 
+    def _del_components(self):
+        for c in self.children:
+            self.children.remove(c)
+
+    def reset_components(self):
+        self._del_components()
+        self.children = SpriteGroup()
+        self._init_components()
+
     def start(self):
         pass
 
@@ -40,9 +49,3 @@ class State:
             obj.on_draw(screen)
 
         obj.children.draw(screen)
-        for c in obj.children:
-            if len(c.children) > 0:
-                self._draw(c, screen)
-
-            if hasattr(c, 'on_draw'):
-                c.on_draw(screen)

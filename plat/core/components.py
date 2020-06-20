@@ -8,6 +8,9 @@ from pygame.sprite import Group, Sprite
 
 from plat.core.utils import *
 
+
+Pos = namedtuple("Pos", "x y")
+
 class BaseComponent(Sprite):
 
     def __init__(self, game, children: List[Sprite] = None):
@@ -23,11 +26,19 @@ class BaseComponent(Sprite):
 
     @property
     def pos(self):
-        return self.rect.midbottom[0], self.rect.midbottom[1]
+        return Pos(self.rect.midbottom[0], self.rect.midbottom[1])
 
     @pos.setter
     def pos(self, xypair):
-        self.rect.midbottom = xypair
+        """ Pos will remain inside boundries of grid. Hitting an edge will stop the player. """
+        x, y = xypair
+        if x < 0 or self.game.state.grid.width < x:
+            self.velocity.x = 0
+        if y < 0 or self.game.state.grid.height < y:
+            self.velocity.y = 0
+        x = min(max(x, 0), self.game.state.grid.width)
+        y = min(max(y, 0), self.game.state.grid.height)
+        self.rect.midbottom = (x, y)
 
     def get_attrs(self):
         raise NotImplementedError()
@@ -51,32 +62,46 @@ class BaseComponent(Sprite):
     def on_update(self):
         pass
 
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+        if len(self.children):
+            for child in self.children:
+                child.draw(screen)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}  pos={self.pos} acc={self.acceleration} vel={self.velocity}>"
+
 
 
 class SpriteGroup:
     ALL_SPRITES = Group()
 
     def __init__(self):
-        self.groups = {
-            'all': Group()
-        }
         self.sprites = Group()
+
+    @property
+    def children(self):
+        return self.sprites
 
     def add(self, sprite: Sprite):
         self.ALL_SPRITES.add(sprite)
         self.sprites.add(sprite)
 
+    def remove(self, sprite: Sprite):
+        self.ALL_SPRITES.remove(sprite)
+        self.sprites.remove(sprite)
+
     def update(self):
         self.sprites.update()
 
     def draw(self, screen):
-        self.sprites.draw(screen)
+        for sprite in self.sprites:
+            if hasattr(sprite, 'on_draw'):
+                sprite.on_draw(screen)
+            sprite.draw(screen)
 
     def empty(self):
         return self.sprites.empty()
-
-    def check_player_collided(self):
-        pass #pygame.sprite.spritecollide(self.PLAYER, self.)
 
     def __iter__(self):
         return self.sprites.__iter__()

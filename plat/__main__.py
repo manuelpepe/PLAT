@@ -79,12 +79,15 @@ class Game:
             if event.type == pygame.JOYBUTTONDOWN:
                 if event.button == JOYBTN['Y']:
                     self.next_state()
+                if event.button == JOYBTN['A']:
+                    breakpoint()
+
 
             self.state.event(event)
 
     def do_draw(self):
         self.state.draw(self.screen)
-        pygame.display.flip()
+        pygame.display.update()
 
     def joy(self):
         joystick_count = pygame.joystick.get_count()
@@ -105,10 +108,11 @@ class Game:
         self.running = True
         self.joy()
         while self.running:
-            self.clock.tick(FPS)
+            print('NewFrame')
             self.do_event()
             self.do_update()
             self.do_draw()
+            self.clock.tick(FPS)
 
 game = Game(800, 800)
 grid = Grid(game)

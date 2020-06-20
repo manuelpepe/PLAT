@@ -2,7 +2,7 @@ import logging
 import pygame
 
 from plat.core.components import BaseComponent
-from plat.core.mixins import JoyMoverMixin, GravityMixin
+from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin
 from plat.core.utils import *
 
 
@@ -17,10 +17,10 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
 
     def get_attrs(self):
         image = pygame.Surface((self.SIZE, self.SIZE))
-        image.fill(BLACK)
+        image.fill(BLUE)
         rect = image.get_rect()
         rect.x, rect.y = 40, 40
-        return image, image.get_rect()
+        return image, rect
 
     def on_event(self, event):
         if event.type == pygame.JOYBUTTONUP:
@@ -37,27 +37,29 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
     def on_update(self):
         self.calculate_newpos()
 
-    def on_draw(self, screen):
-        pygame.draw.circle(screen, BLUE, self.pos, self.SIZE)
 
-
-class Player(GravityMixin, JoyMoverMixin, BaseComponent):
+class Player(CollisionMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
     SIZE = 10
-
+    JOY_SPEED = pygame.Vector2(2, 0)
+    
     def __init__(self, *args, grid=None, **kwargs):
         self.grid = grid
         super().__init__(*args, **kwargs)
 
     def get_attrs(self):
         image = pygame.Surface((self.SIZE, self.SIZE))
-        image.fill(GREY)
+        image.fill(BLACK)
         rect = image.get_rect()
         rect.x, rect.y = 40, 40
-        return image, image.get_rect()
+        return image, rect
 
     def on_update(self):
+        print(self)
         self.calculate_newpos()
-
-    def on_draw(self, screen):
-        pygame.draw.circle(screen, BLUE, self.pos, self.SIZE)
+        hits = self.get_collissions()
+        for hit in hits:
+            if hit.color == RED:
+                self.pos = (self.pos.x, hit.rect.top)
+                self.velocity.y = 0
+                print(self)
