@@ -4,10 +4,6 @@ from plat.core.utils import *
 
 
 class GridLineComponent(BaseComponent):
-    def __init__(self, *args, grid=None, **kwargs):
-        self.grid = grid
-        super().__init__(*args, **kwargs)
-
     def get_attrs(self):
         self.text = self.game.font.render(f"{self.grid}", True, (0, 0, 0))
         return self.text, self.text.get_rect()
@@ -24,11 +20,6 @@ class GridLineComponent(BaseComponent):
 
 class GridSizeComponent(BaseComponent):
     """ Show grid dimensions. """
-
-    def __init__(self, *args, grid=None, **kwargs):
-        self.grid = grid
-        super().__init__(*args, **kwargs)
-
     def get_attrs(self):
         self.text = self.game.font.render(f"{self.grid}", True, (0, 0, 0))
         return self.text, self.text.get_rect()

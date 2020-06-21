@@ -2,7 +2,7 @@ import logging
 import pygame
 
 from plat.core.components import BaseComponent
-from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, JumpFromSquareMixin
+from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, JumpFromSquareMixin, AnimationMixin
 from plat.core.utils import *
 
 from plat.config import *
@@ -15,10 +15,6 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
     FRICTION_AXIS = JoyMoverMixin.AXIS_BOTH
     ACCELERATION = False
     JOY_SPEED = pygame.Vector2(ARROW_JOY_SPEED)
-
-    def __init__(self, *args, grid=None, **kwargs):
-        self.grid = grid
-        super().__init__(*args, **kwargs)
 
     def get_attrs(self):
         image = pygame.Surface((self.SIZE, self.SIZE))
@@ -43,7 +39,7 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
         self.calculate_newpos()
 
 
-class Player(JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
+class Player(AnimationMixin, JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
     SIZE = 10
     JOY_SPEED = pygame.Vector2(PLAYER_JOY_SPEED)
@@ -52,14 +48,18 @@ class Player(JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     MAX_JUMP = PLAYER_MAX_JUMP
     JUMP_FORCE = PLAYER_JUMP_FORCE
     GRAVITY = PLAYER_GRAVITY
+    
+    def get_animations(self):
+        return {
+            'standing': self.game.animate.get('playerStand'),
+            'walking': self.game.animate.get('playerWalk'),
+        }
 
-    def __init__(self, *args, grid=None, **kwargs):
-        self.grid = grid
-        super().__init__(*args, **kwargs)
+    def default_animation(self):
+        return 'standing'
 
     def get_attrs(self):
-        image = pygame.Surface((self.SIZE, self.SIZE))
-        image.fill(BLACK)
+        image = self.game.sprites.get('characters.blue', 'blue_01.png')
         rect = image.get_rect()
         rect.x, rect.y = 40, 40
         return image, rect
@@ -72,3 +72,10 @@ class Player(JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
                 self.pos = (self.pos.x, hit.rect.top)
                 self.velocity.y = 0
                 self.jumping = False
+
+        if self.velocity.x != 0:
+            self.change_animation('walking')
+        else:
+            self.change_animation('standing')
+
+        super().on_update()

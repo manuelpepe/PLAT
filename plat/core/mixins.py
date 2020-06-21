@@ -1,5 +1,6 @@
 import logging
 import pygame
+import math
 
 from typing import List
 
@@ -29,7 +30,6 @@ class MoverMixin:
         self.acceleration = self._calculate_acceleration()
         self.velocity = self._calculate_velocity()
         self.pos = self._calculate_position()
-        print(self)
 
     def _calculate_acceleration(self) -> Vector2:
         """ Returns new acceleration in current update """
@@ -40,16 +40,22 @@ class MoverMixin:
         	acc.y += self.velocity.y * self.FRICTION
         elif self.FRICTION_AXIS == self.AXIS_BOTH:
         	acc += self.velocity * self.FRICTION
+        elif self.FRICTION_AXIS == self.AXIS_NONE:
+            pass
         else:
         	raise ValueError(f'Unkown FRICTION_AXIS for {self}')
+
         return acc
 
     def calculate_acceleration(self) -> Vector2:
         return Vector2(self.base_acceleration)
 
     def _calculate_velocity(self) -> Vector2:
-        """ Returns new velocity in current update """
-        return self.velocity + self.acceleration
+        """ Returns new velocity in current update. """
+        vel = self.velocity + self.acceleration    
+        vel.x = 0 if abs(vel.x) < 0.01 else vel.x
+        vel.y = 0 if abs(vel.y) < 0.01 else vel.y
+        return vel
 
     def _calculate_position(self):
         if self.FRICTION_AXIS != self.AXIS_NONE:
@@ -66,19 +72,26 @@ class JoyMoverMixin(MoverMixin):
     def new(self):
         super().new()
         self.joy = self.game.joystick
+        self.joyinput = (0, 0)
+        self.beforefic = None
+        self.baseacc = None
 
     def calculate_acceleration(self):
-        acc = Vector2(self._normalized_axis_value(0), self._normalized_axis_value(1))
+        self.joyinput = self._normalized_axis_value(0), self._normalized_axis_value(1)
+        self.baseacc = super().calculate_acceleration()
+        acc = Vector2(self.joyinput)
         acc.x = acc.x * self.JOY_SPEED.x
         acc.y = acc.y * self.JOY_SPEED.y
-        acc += super().calculate_acceleration()
-        return acc
+        beforefic = self.baseacc + acc
+        self.beforefic = (beforefic.x, beforefic.y)
+        return beforefic
 
     def _normalized_axis_value(self, axis):
+        """ joy.get_axis() returns a number between """
         value = self.joy.get_axis(axis)
-        if value > 1 or value < -1 or abs(value) < self.AXIS_DEADZONE:
+        if abs(value) < self.AXIS_DEADZONE:
             return 0
-        return value
+        return max(min(value, 0.99), -0.99)
 
 
 class GravityMixin(MoverMixin):
@@ -126,10 +139,44 @@ class JumpFromSquareMixin(JumpMixin, CollisionMixin):
             super().start_jump()
 
     def is_on_plat(self):
-        print(self.game.state.grid.height)
         if self.pos.y == self.game.state.grid.height:
             return True
         self.rect.y += 1
         hits = self.get_collissions()
         self.rect.y -= 1
         return any(h.color == RED for h in hits)
+
+
+class AnimationMixin(BaseComponent):
+    def new(self):
+        self.animations = self.get_animations()
+        self.current_animation = self.default_animation()
+        super().new()
+
+    def get_animations(self) -> dict:
+        """ Return dict of ´name-animation´ pairs """
+        return {}
+
+    def default_animation(self) -> str:
+        """ Return name of default animation """
+        return ''
+
+    def on_update(self):
+        super().on_update()
+        self.animate()
+
+    def change_animation(self, name):
+        if name not in self.animations.keys():
+            raise KeyError(name)
+        if name != self.current_animation:
+            self.animations[self.current_animation].reset()
+            self.current_animation = name
+            self.animations[self.current_animation].reset()
+
+    def animate(self):
+        now = pygame.time.get_ticks()
+        anim = self.animations[self.current_animation]
+        if now - anim.last_update > anim.speed:
+            frame = anim.get_next_frame(now)
+            self.image = frame
+

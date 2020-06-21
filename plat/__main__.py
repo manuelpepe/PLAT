@@ -3,15 +3,16 @@ import sys
 import time
 import pygame
 import logging
+import pathlib
 
 from typing import List
 
 from plat.core.grid import Grid
-from plat.core.components import SpriteGroup
+from plat.core.components import SpriteGroup, SpriteManager, AnimationManager
 from plat.states import GameState, EditState, State
 
 from plat.core.utils import *
-from plat.config import FPS
+from plat.config import FPS, SPRITE_MAPS, ANIMATIONS
 
 
 pygame.init()
@@ -31,16 +32,23 @@ class Game:
 
     Has the grid of the level, screen and clock. Also the list of root components.
     """
-    def __init__(self, width, height):
+    def __init__(self, width, height, sprites_dir, sprite_maps):
         self.height = height
         self.width = width
         self.screen = pygame.display.set_mode((width, height))
-        self.font = pygame.font.SysFont("courier new", 20)
+        self.font_size = 20
+        self.font = pygame.font.SysFont("courier new", self.font_size)
         self.components: List[Component] = []
         self.clock = pygame.time.Clock()
+        self.player = None
         self.running = False
         self.joystick = None
         self.joy()
+
+        self.sprites = SpriteManager(self, SPRITE_MAPS, sprites_dir)
+        self.sprites.load()
+
+        self.animate = AnimationManager(ANIMATIONS, self.sprites)
 
         self._states = None
         self._cur_state = None
@@ -113,7 +121,9 @@ class Game:
             self.do_draw()
             self.clock.tick(FPS)
 
-game = Game(800, 800)
+
+sprites_dir = pathlib.Path(__file__).parent.absolute() / 'sprites'
+game = Game(800, 800, sprites_dir, SPRITE_MAPS)
 grid = Grid(game)
 states = [EditState(game, grid), GameState(game, grid)]
 
