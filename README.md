@@ -25,11 +25,15 @@ This projects requires python3.6+ and a joystick controller to play.
 
 ### General
 
-Left Stick: Movement
-Y: Change state from level creation to gameplay.
+* Left Stick: Movement
+* Y: Change state from level creation to gameplay.
+* B: breakpoint() (debugging)
 
 ### Level Creation
 
-X: Place block
-B: breakpoint() (debugging)
-SHARE: Reset grid
+* X: Place block
+* SHARE: Reset grid
+
+### Gameplay
+
+* A: Jump
