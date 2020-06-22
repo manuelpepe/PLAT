@@ -32,6 +32,7 @@ This projects requires python3.6+ and a joystick controller to play.
 ### Level Creation
 
 * X: Place block
+* A: Remove block
 * SHARE: Reset grid
 
 ### Gameplay
