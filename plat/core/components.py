@@ -116,7 +116,6 @@ class Animation:
         self.last_update = 0
 
     def get_next_frame(self, time):
-        print(self.name, self.current_frame, len(self.frames))
         self.current_frame = (self.current_frame + 1) % len(self.frames)
         self.last_update = time
         return self.frames[self.current_frame]
@@ -136,12 +135,43 @@ class BaseComponent(Sprite):
         self.new()
 
     @property
+    def center(self):
+        return Pos(self.rect.center[0], self.rect.center[1])
+    
+    @center.setter
+    def center(self, xypair):
+        x, y = _check_bounds(xypair)
+        self.rect.center = (x, y)
+
+    @property
+    def topleft(self):
+        return Pos(self.rect.topleft[0], self.rect.topleft[1])
+    
+    @topleft.setter
+    def topleft(self, xypair):
+        x, y = _check_bounds(xypair)
+        self.rect.topleft = (x, y)
+
+    @property
     def pos(self):
         return Pos(self.rect.midbottom[0], self.rect.midbottom[1])
 
     @pos.setter
     def pos(self, xypair):
-        """ Pos will remain inside boundries of grid. Hitting an edge will stop the player. """
+        x, y = self._check_bounds(xypair)
+        self.rect.midbottom = (x, y)
+
+    @property
+    def width(self):
+        return self.image.get_width()
+    
+    @property
+    def height(self):
+        return self.image.get_height()
+
+    def _check_bounds(self, xypair):
+        """ Pos will remain inside boundries of grid. 
+        Hitting an edge will stop the player. """
         x, y = xypair
         if x < 0 or self.game.state.grid.width < x:
             self.velocity.x = 0
@@ -149,7 +179,7 @@ class BaseComponent(Sprite):
             self.velocity.y = 0
         x = min(max(x, 0), self.game.state.grid.width)
         y = min(max(y, 0), self.game.state.grid.height)
-        self.rect.midbottom = (x, y)
+        return x, y
 
     def get_attrs(self):
         raise NotImplementedError()

@@ -2,7 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-print(setuptools.find_packages())
+
 setuptools.setup(
     name="PLAT",
     version="0.1",

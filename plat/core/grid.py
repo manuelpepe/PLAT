@@ -9,7 +9,8 @@ from plat.core.components import BaseComponent
 from plat.core.utils import *
 
 
-class Square(BaseComponent):
+class Block(BaseComponent):
+    COLOR = WHITE
     c: int
     r: int
     grid: 'Grid' = field(repr=False, compare=False)
@@ -23,8 +24,13 @@ class Square(BaseComponent):
         self.grid = grid
         self.height = height
         self.width = width
-        self._color = color
+        self._color = color or self.COLOR
         super().__init__(*args, **kwargs)
+
+    @classmethod
+    def from_(cls, block: 'Block') -> 'Block':
+        new = cls(block.game, c=block.c, r=block.r, grid=block.grid, height=block.height, width=block.width)
+        return new
 
     @property
     def color(self):
@@ -52,7 +58,22 @@ class Square(BaseComponent):
         return self.r * self.height
 
     def __repr__(self):
-        return f"<Square x={self.x} y={self.y} c={self.c} r={self.r} color={self.color}>"
+        return f"<{self.__class__.__name__} x={self.x} y={self.y} c={self.c} r={self.r} color={self.color}>"
+
+
+class CollidableBlock(Block):
+    def __init__(self, *args, **kwargs):
+        self.mask = None
+        super().__init__(*args, **kwargs)
+
+    def on_update(self):
+        super().on_update()
+        if self.image:
+            self.mask = pygame.mask.from_surface(self.image)
+
+
+class SolidBlock(CollidableBlock):
+    COLOR = RED
 
 
 class Grid(BaseComponent):
@@ -66,7 +87,7 @@ class Grid(BaseComponent):
         self.bheight = bheight
         self.bwidth = bwidth
         super().__init__(game, **kwargs)
-        self.grid: List[Square] = self._generate_grid()
+        self.grid: List[Block] = self._generate_grid()
 
     def __repr__(self):
         return f'Grid(rows={self.rows}, cols={self.cols})'
@@ -87,10 +108,10 @@ class Grid(BaseComponent):
         img.fill(WHITE)
         return img, img.get_rect()
 
-    def _generate_grid(self) -> List[Square]:
+    def _generate_grid(self) -> List[Block]:
         self.logger.debug(f'Generating grid {self}')
         self.grid = [
-            [Square(self.game, c=c, r=r, grid=self, height=self.bheight, width=self.bwidth, color=WHITE) for c in range(self.cols)] 
+            [Block(self.game, c=c, r=r, grid=self, height=self.bheight, width=self.bwidth, color=WHITE) for c in range(self.cols)] 
             for r in range(self.rows)
         ]
         self.children.empty()
@@ -102,7 +123,7 @@ class Grid(BaseComponent):
     def reset(self):
         self._generate_grid()
 
-    def get_square(self, x, y, lookup) -> Square:
+    def get_square(self, x, y, lookup=XY) -> Block:
         if lookup == self.ROWCOLS:
             raise NotImplementedError()
         elif lookup == self.XY:
@@ -110,7 +131,23 @@ class Grid(BaseComponent):
         else:
             raise ValueError(f'Unkown lookup {lookup}')
 
-    def get_square_xy(self, x, y) -> Square:
-        col = int(x // self.bwidth)
-        row = int(y // self.bheight)
+    def set_square(self, x, y, block, lookup=XY) -> Block:
+        if lookup == self.ROWCOLS:
+            raise NotImplementedError()
+        elif lookup == self.XY:
+            return self.set_square_xy(x, y, block)
+        else:
+            raise ValueError(f'Unkown lookup {lookup}')
+
+    def _xy_to_rowcols(self, x, y):
+        return int(x // self.bwidth), int(y // self.bheight)
+
+    def get_square_xy(self, x, y) -> Block:
+        col, row = self._xy_to_rowcols(x, y) 
         return self.grid[row][col]
+
+    def set_square_xy(self, x, y, block) -> Block:
+        col, row = self._xy_to_rowcols(x, y)
+        self.grid[row][col].kill()
+        self.grid[row][col] = block
+        self.children.add(block)

@@ -2,7 +2,8 @@ import logging
 import pygame
 
 from plat.core.components import BaseComponent
-from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, JumpFromSquareMixin, AnimationMixin
+from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, CollidableJumpFromSolidMixin, AnimationMixin
+from plat.core.grid import Block, SolidBlock
 from plat.core.utils import *
 
 from plat.config import *
@@ -29,9 +30,9 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
             if event.button == JOYBTN['Y']:
                 print(sq)
             elif event.button == JOYBTN['A']:
-                sq.color = WHITE
+                self.grid.set_square(*self.pos, Block.from_(sq))
             elif event.button == JOYBTN['X']:
-                sq.color = RED
+                self.grid.set_square(*self.pos, SolidBlock.from_(sq))
             elif event.button == JOYBTN['SHARE']:
                 self.grid.reset()
 
@@ -39,7 +40,7 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
         self.calculate_newpos()
 
 
-class Player(AnimationMixin, JumpFromSquareMixin, GravityMixin, JoyMoverMixin, BaseComponent):
+class Player(AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
     SIZE = 10
     JOY_SPEED = pygame.Vector2(PLAYER_JOY_SPEED)
@@ -60,22 +61,16 @@ class Player(AnimationMixin, JumpFromSquareMixin, GravityMixin, JoyMoverMixin, B
 
     def get_attrs(self):
         image = self.game.sprites.get('characters.blue', 'blue_01.png')
+        image = pygame.transform.scale(image, (image.get_width() - 1, image.get_height() - 1))
         rect = image.get_rect()
         rect.x, rect.y = 40, 40
         return image, rect
 
     def on_update(self):
         self.calculate_newpos()
-        hits = self.get_collissions()
-        for hit in hits:
-            if hit.color == RED:
-                self.pos = (self.pos.x, hit.rect.top)
-                self.velocity.y = 0
-                self.jumping = False
-
+        super().on_update()
         if self.velocity.x != 0:
             self.change_animation('walking')
         else:
             self.change_animation('standing')
 
-        super().on_update()

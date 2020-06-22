@@ -116,6 +116,7 @@ class Game:
         self.running = True
         self.joy()
         while self.running:
+            print('====== New Frame ======')
             self.do_event()
             self.do_update()
             self.do_draw()
