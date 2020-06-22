@@ -2,7 +2,7 @@ import logging
 import pygame
 
 from plat.core.components import BaseComponent
-from plat.core.mixins import JoyMoverMixin, GravityMixin, CollisionMixin, CollidableJumpFromSolidMixin, AnimationMixin
+from plat.core.mixins import JoyMoverMixin, GravityMixin, MoverCollissionsWithBlocksMixin, CollidableJumpFromSolidMixin, AnimationMixin
 from plat.core.grid import Block, SolidBlock
 from plat.core.utils import *
 
@@ -42,7 +42,7 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
 
 class Player(AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
-    SIZE = 10
+    SIZE = 10 
     JOY_SPEED = pygame.Vector2(PLAYER_JOY_SPEED)
     
     FRICTION = PLAYER_FRICTION

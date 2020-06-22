@@ -126,8 +126,30 @@ class CollisionableMixin(BaseComponent):
         if self.image:
             self.mask = from_surface(self.image)
 
+class JumpMixin(MoverMixin, BaseComponent):
+    MAX_JUMP = 3
+    JUMP_FORCE = 4
 
-class MoverCollissionsWithBlocksMixin(MoverMixin, CollisionableMixin):
+    def on_event(self, event):
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == JOYBTN['A']:
+                self.start_jump()
+        if event.type == pygame.JOYBUTTONUP:
+            if event.button == JOYBTN['A']:
+                self.end_jump()
+
+
+    def start_jump(self):
+        self.jumping = True
+        self.velocity.y = -self.JUMP_FORCE
+
+    def end_jump(self):
+        if self.jumping:
+            if self.velocity.y < -self.MAX_JUMP:
+                self.velocity.y = -self.MAX_JUMP
+
+
+class MoverCollissionsWithBlocksMixin(JumpMixin, CollisionableMixin):
     def get_collissions(self) -> List[Sprite]:
         dir_ = self._parse_direction(self.direction)
         self.rect.y += dir_.y
@@ -159,7 +181,7 @@ class MoverCollissionsWithBlocksMixin(MoverMixin, CollisionableMixin):
             # print(f'Left Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.right = hit.rect.left
             self.velocity.x = 0
-        elif -45 > angle > -135:
+        elif -45 > angle > -135 and self._going_up():
             # print(f'Top Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.top = hit.rect.bottom
             self.velocity.y = 0
@@ -171,10 +193,12 @@ class MoverCollissionsWithBlocksMixin(MoverMixin, CollisionableMixin):
             # print(f'Bottom Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.bottom = hit.rect.top
             self.velocity.y = 0
-            self.jumping = False
+
+    def _going_up(self):
+        return self.velocity.y < 0
 
 
-class JumpMixin(MoverMixin, BaseComponent):
+class JumpMixin(MoverCollissionsWithBlocksMixin):
     MAX_JUMP = 3
     JUMP_FORCE = 4
 
