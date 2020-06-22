@@ -177,25 +177,37 @@ class MoverCollissionsWithBlocksMixin(JumpMixin, CollisionableMixin):
         new_self_center = Vector2(self.center) - Vector2(hit.center)
         angle = new_self_center.angle_to(Vector2((0, 0)))
 
-        if 135 < angle or angle < -135: 
+        if self._coming_left(angle): 
             # print(f'Left Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.right = hit.rect.left
             self.velocity.x = 0
-        elif -45 > angle > -135 and self._going_up():
+        elif self._coming_up(angle) and self._going_up():
             # print(f'Top Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.top = hit.rect.bottom
             self.velocity.y = 0
-        elif -45 < angle < 45:
+        elif self._coming_right(angle):
             # print(f'Right Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.left = hit.rect.right
             self.velocity.x = 0
-        elif 134 > angle > 48:
+        elif self._coming_down(angle):
             # print(f'Bottom Collision Angle: {angle} ({self.center} to {hit.center})')
             self.rect.bottom = hit.rect.top
             self.velocity.y = 0
 
     def _going_up(self):
         return self.velocity.y < 0
+
+    def _coming_left(self, angle):
+        return 135 < angle or angle < -135
+
+    def _coming_right(self, angle):
+        return -45 < angle < 45
+
+    def _coming_up(self, angle):
+        return -45 > angle > -135
+        
+    def _coming_down(self, angle):
+        return 134 > angle > 48
 
 
 class JumpMixin(MoverCollissionsWithBlocksMixin):
