@@ -143,7 +143,9 @@ class Grid(BaseComponent):
         return int(x // self.bwidth), int(y // self.bheight)
 
     def get_square_xy(self, x, y) -> Block:
-        col, row = self._xy_to_rowcols(x, y) 
+        col, row = self._xy_to_rowcols(x, y)
+        if row >= len(self.grid) or col >= len(self.grid[row]):
+            return None
         return self.grid[row][col]
 
     def set_square_xy(self, x, y, block) -> Block:

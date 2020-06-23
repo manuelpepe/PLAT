@@ -89,15 +89,15 @@ class AnimationManager:
         self.animations = animations
         self.spritemanager = spritemanager
 
-    def get(self, name):
-        return Animation(name, self.animations[name]).load(self.spritemanager)
+    def get(self, name, delay=100, flip=False):
+        return Animation(name, self.animations[name], delay, flip).load(self.spritemanager)
 
 
 class Animation:
-    def __init__(self, name, frames=[], speed=200, flip=False):
+    def __init__(self, name, frames=[], delay=100, flip=False):
         self.name = name
         self.flip = flip
-        self.speed = speed
+        self.delay = delay
         self.current_frame = 0
         self.last_update = 0
         self.raw_frames = frames
@@ -107,7 +107,7 @@ class Animation:
         for fdata in self.raw_frames:
             frame = spritemanager.get(*fdata)
             if self.flip:
-                flip(frame)
+                frame = flip(frame, True, False)
             self.frames.append(frame)
         return self
 
@@ -130,6 +130,8 @@ class BaseComponent(Sprite):
         self.grid = grid
         self.image, self.rect = self.get_attrs()
         self.children = SpriteGroup()
+        self._x = self.rect.midbottom[0]
+        self._y = self.rect.midbottom[1]
         for child in children:
             self.children.add(child) 
         self.new()
@@ -142,6 +144,7 @@ class BaseComponent(Sprite):
     def center(self, xypair):
         x, y = _check_bounds(xypair)
         self.rect.center = (x, y)
+        self._set_xy()
 
     @property
     def topleft(self):
@@ -151,6 +154,7 @@ class BaseComponent(Sprite):
     def topleft(self, xypair):
         x, y = _check_bounds(xypair)
         self.rect.topleft = (x, y)
+        self._set_xy()
 
     @property
     def pos(self):
@@ -160,6 +164,7 @@ class BaseComponent(Sprite):
     def pos(self, xypair):
         x, y = self._check_bounds(xypair)
         self.rect.midbottom = (x, y)
+        self._set_xy()
 
     @property
     def width(self):
@@ -168,6 +173,10 @@ class BaseComponent(Sprite):
     @property
     def height(self):
         return self.image.get_height()
+
+    def _set_xy(self):
+        self._x = self.rect.midbottom[0]
+        self._y = self.rect.midbottom[1]
 
     def _check_bounds(self, xypair):
         """ Pos will remain inside boundries of grid. 

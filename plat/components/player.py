@@ -46,18 +46,24 @@ class Player(AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMove
     JOY_SPEED = pygame.Vector2(PLAYER_JOY_SPEED)
     
     FRICTION = PLAYER_FRICTION
-    MAX_JUMP = PLAYER_MAX_JUMP
+    MIN_JUMP = PLAYER_MIN_JUMP
     JUMP_FORCE = PLAYER_JUMP_FORCE
     GRAVITY = PLAYER_GRAVITY
-    
+
+    def __init__(self, *args, **kwargs):
+        self.walking_right = True
+        super().__init__(*args, **kwargs)
+            
     def get_animations(self):
         return {
-            'standing': self.game.animate.get('playerStand'),
-            'walking': self.game.animate.get('playerWalk'),
+            'standingRight': self.game.animate.get('playerStand', delay=200),
+            'standingLeft': self.game.animate.get('playerStand', flip=True),
+            'walkingRight': self.game.animate.get('playerWalk', delay=200),
+            'walkingLeft': self.game.animate.get('playerWalk', flip=True),
         }
 
     def default_animation(self):
-        return 'standing'
+        return 'standingRight'
 
     def get_attrs(self):
         image = self.game.sprites.get('characters.blue', 'blue_01.png')
@@ -69,8 +75,32 @@ class Player(AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMove
     def on_update(self):
         self.calculate_newpos()
         super().on_update()
-        if self.velocity.x != 0:
-            self.change_animation('walking')
+        if self.velocity.x > 0:
+            self.change_animation('walkingRight')
+            self.walking_right = True
+        elif self.velocity.x < 0:
+            self.change_animation('walkingLeft')
+            self.walking_right = False
+        elif self.walking_right:
+            self.change_animation('standingRight')
         else:
-            self.change_animation('standing')
+            self.change_animation('standingLeft')
 
+    def on_event(self, event):
+        if event.type == pygame.JOYBUTTONUP:
+            sq = self.grid.get_square(*self.pos, 2)
+            if event.button == JOYBTN['L1']:
+                self.JUMP_FORCE -= 0.1
+            elif event.button == JOYBTN['R1']:
+                self.JUMP_FORCE += 0.1
+            elif event.button == JOYBTN['L2']:
+                self.base_acceleration = (0, self.base_acceleration[1] - 0.01)
+                self.GRAVITY -= 0.01
+            elif event.button == JOYBTN['R2']:
+                self.base_acceleration = (0, self.base_acceleration[1] + 0.01)
+                self.GRAVITY += 0.01
+            elif event.button == JOYBTN['SHARE']:
+                self.MIN_JUMP -= 1
+            elif event.button == JOYBTN['X']:
+                self.MIN_JUMP += 1
+        super().on_event(event)

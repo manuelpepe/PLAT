@@ -41,7 +41,6 @@ class Game:
         self.components: List[Component] = []
         self.clock = pygame.time.Clock()
         self.player = None
-        self.running = False
         self.joystick = None
         self.joy()
 
@@ -50,6 +49,8 @@ class Game:
 
         self.animate = AnimationManager(ANIMATIONS, self.sprites)
 
+        self.running = False
+        self.dt = None
         self._states = None
         self._cur_state = None
 
@@ -116,11 +117,12 @@ class Game:
         self.running = True
         self.joy()
         while self.running:
-            print('====== New Frame ======')
+            self.dt = self.clock.tick(FPS) / 1000
+            # print('====== New Frame ======')
             self.do_event()
             self.do_update()
             self.do_draw()
-            self.clock.tick(FPS)
+            
 
 
 sprites_dir = pathlib.Path(__file__).parent.absolute() / 'sprites'

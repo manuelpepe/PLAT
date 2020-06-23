@@ -47,15 +47,16 @@ class MoverMixin:
         """ Returns new acceleration in current update """
         acc = self.calculate_acceleration()
         if self.FRICTION_AXIS == self.AXIS_X:
-        	acc.x += self.velocity.x * self.FRICTION
+            print(f"(acc) {acc.x} + {self.velocity.x} * {self.FRICTION} = {acc.x + self.velocity.x * self.FRICTION}")
+            acc.x += self.velocity.x * self.FRICTION
         elif self.FRICTION_AXIS == self.AXIS_Y:
-        	acc.y += self.velocity.y * self.FRICTION
+            acc.y += self.velocity.y * self.FRICTION
         elif self.FRICTION_AXIS == self.AXIS_BOTH:
-        	acc += self.velocity * self.FRICTION
+            acc += self.velocity * self.FRICTION
         elif self.FRICTION_AXIS == self.AXIS_NONE:
             pass
         else:
-        	raise ValueError(f'Unkown FRICTION_AXIS for {self}')
+            raise ValueError(f'Unkown FRICTION_AXIS for {self}')
 
         return acc
 
@@ -67,10 +68,12 @@ class MoverMixin:
         vel = self.velocity + self.acceleration
         vel.x = 0 if abs(vel.x) < 0.1 else vel.x
         vel.y = 0 if abs(vel.y) < 0.1 else vel.y
+
         return vel
 
     def _calculate_position(self):
         if self.FRICTION_AXIS != self.AXIS_NONE:
+            print(f"(pos) {self.pos} + {self.velocity} + 0.5 * {self.acceleration} = {self.pos + self.velocity + 0.5 * self.acceleration}")
             return self.pos + self.velocity + 0.5 * self.acceleration
         else:
             return self.pos + self.velocity
@@ -95,7 +98,6 @@ class JoyMoverMixin(MoverMixin):
         acc = Vector2(self.joyinput)
         acc.x = acc.x * self.JOY_SPEED.x
         acc.y = acc.y * self.JOY_SPEED.y
-        
         beforefic = self.baseacc + acc
         self.beforefic = (beforefic.x, beforefic.y)
         
@@ -127,7 +129,7 @@ class CollisionableMixin(BaseComponent):
             self.mask = from_surface(self.image)
 
 class JumpMixin(MoverMixin, BaseComponent):
-    MAX_JUMP = 3
+    MIN_JUMP = 3
     JUMP_FORCE = 4
 
     def on_event(self, event):
@@ -145,8 +147,8 @@ class JumpMixin(MoverMixin, BaseComponent):
 
     def end_jump(self):
         if self.jumping:
-            if self.velocity.y < -self.MAX_JUMP:
-                self.velocity.y = -self.MAX_JUMP
+            if self.velocity.y < -self.MIN_JUMP:
+                self.velocity.y = -self.MIN_JUMP
 
 
 class MoverCollissionsWithBlocksMixin(JumpMixin, CollisionableMixin):
@@ -284,7 +286,7 @@ class AnimationMixin(BaseComponent):
     def animate(self):
         now = pygame.time.get_ticks()
         anim = self.animations[self.current_animation]
-        if now - anim.last_update > anim.speed:
+        if now - anim.last_update > anim.delay:
             frame = anim.get_next_frame(now)
             self.image = frame
 
