@@ -10,7 +10,7 @@ from pygame.mask import from_surface
 
 from plat.core.utils import *
 from plat.core.components import BaseComponent
-from plat.core.grid import SolidBlock
+
 
 class MoverMixin:
     """ Call self.calculate_newpos() on child update method. """
@@ -19,8 +19,11 @@ class MoverMixin:
     AXIS_BOTH = 3
     AXIS_NONE = 4
 
+    # NOTE: 
     FRICTION = -0.16
     FRICTION_AXIS = AXIS_X
+
+    INPUT_VEL_MULTIPLIER = Vector2(2, 2)
 
     @property
     def direction(self):
@@ -39,25 +42,40 @@ class MoverMixin:
 
     def calculate_newpos(self):
         self.last_pos = self.pos
+        self.input_vel = self.get_input_vel()
+        self.calculated_vel = self._get_calculated_vel()
         self.acceleration = self._calculate_acceleration()
         self.velocity = self._calculate_velocity()
         self.pos = self._calculate_position()
 
+    def _get_calculated_vel(self):
+        vel = Vector2(self.input_vel)
+        vel.x *= self.INPUT_VEL_MULTIPLIER.x
+        vel.y *= self.INPUT_VEL_MULTIPLIER.y
+        return vel
+
     def _calculate_acceleration(self) -> Vector2:
         """ Returns new acceleration in current update """
         acc = self.calculate_acceleration()
-        if self.FRICTION_AXIS == self.AXIS_X:
-            print(f"(acc) {acc.x} + {self.velocity.x} * {self.FRICTION} = {acc.x + self.velocity.x * self.FRICTION}")
-            acc.x += self.velocity.x * self.FRICTION
-        elif self.FRICTION_AXIS == self.AXIS_Y:
-            acc.y += self.velocity.y * self.FRICTION
-        elif self.FRICTION_AXIS == self.AXIS_BOTH:
-            acc += self.velocity * self.FRICTION
-        elif self.FRICTION_AXIS == self.AXIS_NONE:
-            pass
-        else:
-            raise ValueError(f'Unkown FRICTION_AXIS for {self}')
+        print('acc before joystick input:', acc)
+        acc = acc + self.calculated_vel
+        acc = self._calculate_friction(acc)
+        print('acc after frition: ', acc)
+        return acc
 
+    def _calculate_friction(self, acc) -> Vector2:
+        # if self.FRICTION_AXIS == self.AXIS_X:
+        #     # print(f"(acc) {acc.x} + {self.velocity.x} * {self.FRICTION} = {acc.x + self.velocity.x * self.FRICTION}")
+        #     acc.x += self.velocity.x * self.FRICTION
+        # elif self.FRICTION_AXIS == self.AXIS_Y:
+        #     acc.y += self.velocity.y * self.FRICTION
+        # elif self.FRICTION_AXIS == self.AXIS_BOTH:
+        #     acc += self.velocity * self.FRICTION
+        # elif self.FRICTION_AXIS == self.AXIS_NONE:
+        #     pass
+        # else:
+        #     raise ValueError(f'Unkown FRICTION_AXIS for {self}')
+        acc += self.velocity * self.FRICTION
         return acc
 
     def calculate_acceleration(self) -> Vector2:
@@ -73,14 +91,13 @@ class MoverMixin:
 
     def _calculate_position(self):
         if self.FRICTION_AXIS != self.AXIS_NONE:
-            print(f"(pos) {self.pos} + {self.velocity} + 0.5 * {self.acceleration} = {self.pos + self.velocity + 0.5 * self.acceleration}")
+            # print(f"(pos) {self.pos} + {self.velocity} + 0.5 * {self.acceleration} = {self.pos + self.velocity + 0.5 * self.acceleration}")
             return self.pos + self.velocity + 0.5 * self.acceleration
         else:
             return self.pos + self.velocity
 
 
 class JoyMoverMixin(MoverMixin):
-    JOY_SPEED = Vector2(2, 2)
     AXIS_DEADZONE = 0.30
     FRICTION = -0.5
 
@@ -88,20 +105,9 @@ class JoyMoverMixin(MoverMixin):
         super().new()
         self.joy = self.game.joystick
         self.joyinput = (0, 0)
-        self.beforefic = None
-        self.baseacc = None
 
-    def calculate_acceleration(self):
-        self.joyinput = self._normalized_axis_value(0), self._normalized_axis_value(1)
-        self.baseacc = super().calculate_acceleration()
-
-        acc = Vector2(self.joyinput)
-        acc.x = acc.x * self.JOY_SPEED.x
-        acc.y = acc.y * self.JOY_SPEED.y
-        beforefic = self.baseacc + acc
-        self.beforefic = (beforefic.x, beforefic.y)
-        
-        return beforefic
+    def get_input_vel(self):
+        return self._normalized_axis_value(0), self._normalized_axis_value(1)
 
     def _normalized_axis_value(self, axis):
         """ joy.get_axis() returns a number between """
@@ -119,6 +125,12 @@ class GravityMixin(MoverMixin):
 
 
 class CollisionableMixin(BaseComponent):
+    # TODO: Add flags to enable collisions on each side
+    COLLIDE_LEFT = True
+    COLLIDE_RIGHT = True
+    COLLIDE_TOP = True
+    COLLIDE_BOTTOM = True
+    
     def new(self):
         self.mask = None
         super().new()
@@ -128,133 +140,29 @@ class CollisionableMixin(BaseComponent):
         if self.image:
             self.mask = from_surface(self.image)
 
-class JumpMixin(MoverMixin, BaseComponent):
-    MIN_JUMP = 3
-    JUMP_FORCE = 4
-
-    def on_event(self, event):
-        if event.type == pygame.JOYBUTTONDOWN:
-            if event.button == JOYBTN['A']:
-                self.start_jump()
-        if event.type == pygame.JOYBUTTONUP:
-            if event.button == JOYBTN['A']:
-                self.end_jump()
-
-
-    def start_jump(self):
-        self.jumping = True
-        self.velocity.y = -self.JUMP_FORCE
-
-    def end_jump(self):
-        if self.jumping:
-            if self.velocity.y < -self.MIN_JUMP:
-                self.velocity.y = -self.MIN_JUMP
-
-
-class MoverCollissionsWithBlocksMixin(JumpMixin, CollisionableMixin):
     def get_collissions(self) -> List[Sprite]:
         dir_ = self._parse_direction(self.direction)
         self.rect.y += dir_.y
-        cols = pygame.sprite.spritecollide(self, self.game.state.grid.children.sprites, False) 
+        cols = pygame.sprite.spritecollide(self, self.game.state.obj.grid.children.sprites, False) 
         self.rect.y -= dir_.y
         self.rect.x += dir_.x
-        cols += pygame.sprite.spritecollide(self, self.game.state.grid.children.sprites, False) 
+        cols += pygame.sprite.spritecollide(self, self.game.state.obj.grid.children.sprites, False) 
         self.rect.x -= dir_.x
         return cols
 
-    def _parse_direction(self, dir_):
-        return Vector2((
-            math.trunc(dir_.x * 1),
-            math.trunc(dir_.y * 1),
-        ))
-        
-    def on_update(self):
+    def _check_collisions(self):
         hits = self.get_collissions()
         for hit in hits:
-            if isinstance(hit, SolidBlock):
-                self._check_collisions(hit)
-        super().on_update()
+            self._check_collision(hit)
 
-    def _check_collisions(self, hit):
-        new_self_center = Vector2(self.center) - Vector2(hit.center)
-        angle = new_self_center.angle_to(Vector2((0, 0)))
+    def _check_collision(self, hit):
+        pass
 
-        if self._coming_left(angle): 
-            # print(f'Left Collision Angle: {angle} ({self.center} to {hit.center})')
-            self.rect.right = hit.rect.left
-            self.velocity.x = 0
-        elif self._coming_up(angle) and self._going_up():
-            # print(f'Top Collision Angle: {angle} ({self.center} to {hit.center})')
-            self.rect.top = hit.rect.bottom
-            self.velocity.y = 0
-        elif self._coming_right(angle):
-            # print(f'Right Collision Angle: {angle} ({self.center} to {hit.center})')
-            self.rect.left = hit.rect.right
-            self.velocity.x = 0
-        elif self._coming_down(angle):
-            # print(f'Bottom Collision Angle: {angle} ({self.center} to {hit.center})')
-            self.rect.bottom = hit.rect.top
-            self.velocity.y = 0
+    def on_collision_start(self, other: 'CollisionableMixin'):
+        pass
 
-    def _going_up(self):
-        return self.velocity.y < 0
-
-    def _coming_left(self, angle):
-        return 135 < angle or angle < -135
-
-    def _coming_right(self, angle):
-        return -45 < angle < 45
-
-    def _coming_up(self, angle):
-        return -45 > angle > -135
-        
-    def _coming_down(self, angle):
-        return 134 > angle > 48
-
-
-class JumpMixin(MoverCollissionsWithBlocksMixin):
-    MAX_JUMP = 3
-    JUMP_FORCE = 4
-
-    def on_event(self, event):
-        if event.type == pygame.JOYBUTTONDOWN:
-            if event.button == JOYBTN['A']:
-                self.start_jump()
-        if event.type == pygame.JOYBUTTONUP:
-            if event.button == JOYBTN['A']:
-                self.end_jump()
-
-
-    def start_jump(self):
-        self.jumping = True
-        self.velocity.y = -self.JUMP_FORCE
-
-    def end_jump(self):
-        if self.jumping:
-            if self.velocity.y < -self.MAX_JUMP:
-                self.velocity.y = -self.MAX_JUMP
-
-
-class CollidableJumpFromSolidMixin(JumpMixin, MoverCollissionsWithBlocksMixin):
-    def new(self):
-        super().new()
-        self.jumping = False
-
-    def start_jump(self):
-        if self.is_on_plat():
-            super().start_jump()
-
-    def is_on_plat(self):
-        if self.pos.y == self.game.state.grid.height:
-            return True
-        self.rect.y += 1
-        hits = self.get_collissions()
-        self.rect.y -= 1
-        collisions = filter(lambda h: isinstance(h, SolidBlock), hits)
-        for col in collisions:
-            if col.rect.top == self.rect.bottom:
-                return True
-        return False
+    def on_collision_end(self, other: 'CollisionableMixin'):
+        pass
 
 
 class AnimationMixin(BaseComponent):
@@ -289,4 +197,5 @@ class AnimationMixin(BaseComponent):
         if now - anim.last_update > anim.delay:
             frame = anim.get_next_frame(now)
             self.image = frame
+
 

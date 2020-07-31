@@ -6,6 +6,7 @@ from random import choice
 from dataclasses import dataclass, field
 
 from plat.core.components import BaseComponent
+from plat.core.mixins import CollisionableMixin
 from plat.core.utils import *
 
 
@@ -61,7 +62,7 @@ class Block(BaseComponent):
         return f"<{self.__class__.__name__} x={self.x} y={self.y} c={self.c} r={self.r} color={self.color}>"
 
 
-class CollidableBlock(Block):
+class CollidableBlock(Block, CollisionableMixin):
     def __init__(self, *args, **kwargs):
         self.mask = None
         super().__init__(*args, **kwargs)
@@ -74,6 +75,27 @@ class CollidableBlock(Block):
 
 class SolidBlock(CollidableBlock):
     COLOR = RED
+
+
+class LiquidBlock(CollidableBlock):
+    COLOR = BLUE
+
+    COLLIDE_LEFT = False
+    COLLIDE_RIGHT = False
+    COLLIDE_TOP = False
+    COLLIDE_BOTTOM = False
+    
+    SLOWDOWN_DELTA = 0.5
+
+
+    def on_collision_start(self, other: 'CollisionableMixin'):
+        # TODO: Slow other
+        pass
+
+    def on_collision_end(self, other: 'CollisionableMixin'):
+        # TODO: Restore other velocity
+        pass
+
 
 
 class Grid(BaseComponent):

@@ -2,8 +2,9 @@ import logging
 import pygame
 
 from plat.core.components import BaseComponent
-from plat.core.mixins import JoyMoverMixin, GravityMixin, MoverCollissionsWithBlocksMixin, CollidableJumpFromSolidMixin, AnimationMixin
-from plat.core.grid import Block, SolidBlock
+from plat.core.mixins import JoyMoverMixin, GravityMixin, AnimationMixin
+from plat.core.fun import MoverCollissionsWithBlocksMixin, CollidableJumpFromSolidMixin, SwimmerMixin
+from plat.core.grid import Block, SolidBlock, LiquidBlock
 from plat.core.utils import *
 
 from plat.config import *
@@ -15,7 +16,7 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
     FRICTION = ARROW_FRICTION
     FRICTION_AXIS = JoyMoverMixin.AXIS_BOTH
     ACCELERATION = False
-    JOY_SPEED = pygame.Vector2(ARROW_JOY_SPEED)
+    INPUT_VEL_MULTIPLIER = pygame.Vector2(ARROW_JOY_SPEED)
 
     def get_attrs(self):
         image = pygame.Surface((self.SIZE, self.SIZE))
@@ -33,22 +34,25 @@ class ArrowComponent(JoyMoverMixin, BaseComponent):
                 self.grid.set_square(*self.pos, Block.from_(sq))
             elif event.button == JOYBTN['X']:
                 self.grid.set_square(*self.pos, SolidBlock.from_(sq))
+            elif event.button == JOYBTN['R1']:
+                self.grid.set_square(*self.pos, LiquidBlock.from_(sq))
             elif event.button == JOYBTN['SHARE']:
                 self.grid.reset()
-
+                
     def on_update(self):
         self.calculate_newpos()
 
 
-class Player(AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMoverMixin, BaseComponent):
+class Player(SwimmerMixin, AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMoverMixin, BaseComponent):
     """ Player for Game Mode """
     SIZE = 10 
-    JOY_SPEED = pygame.Vector2(PLAYER_JOY_SPEED)
+    INPUT_VEL_MULTIPLIER = pygame.Vector2(PLAYER_JOY_SPEED)
     
     FRICTION = PLAYER_FRICTION
     MIN_JUMP = PLAYER_MIN_JUMP
     JUMP_FORCE = PLAYER_JUMP_FORCE
     GRAVITY = PLAYER_GRAVITY
+    FRICTION_AXIS = JoyMoverMixin.AXIS_BOTH
 
     def __init__(self, *args, **kwargs):
         self.walking_right = True
@@ -90,15 +94,15 @@ class Player(AnimationMixin, CollidableJumpFromSolidMixin, GravityMixin, JoyMove
         if event.type == pygame.JOYBUTTONUP:
             sq = self.grid.get_square(*self.pos, 2)
             if event.button == JOYBTN['L1']:
-                self.JUMP_FORCE -= 0.1
+                self.JUMP_FORCE -= 1
             elif event.button == JOYBTN['R1']:
-                self.JUMP_FORCE += 0.1
+                self.JUMP_FORCE += 1
             elif event.button == JOYBTN['L2']:
-                self.base_acceleration = (0, self.base_acceleration[1] - 0.01)
-                self.GRAVITY -= 0.01
+                self.base_acceleration = (0, self.base_acceleration[1] - 1)
+                self.GRAVITY -= 1
             elif event.button == JOYBTN['R2']:
-                self.base_acceleration = (0, self.base_acceleration[1] + 0.01)
-                self.GRAVITY += 0.01
+                self.base_acceleration = (0, self.base_acceleration[1] + 1)
+                self.GRAVITY += 1
             elif event.button == JOYBTN['SHARE']:
                 self.MIN_JUMP -= 1
             elif event.button == JOYBTN['X']:

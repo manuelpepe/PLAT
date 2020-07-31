@@ -7,12 +7,14 @@ class PlayerStats(BaseComponent):
 		"center",
 		"velocity",
 		"acceleration",
-		"beforefic",
-		"baseacc",
 		"joyinput",
 		"JUMP_FORCE",
 		"GRAVITY",
 		"MIN_JUMP",
+		"FRICTION",
+		"FRICTION_AXIS",
+		"INPUT_VEL_MULTIPLIER",
+		"CURRENT_LIQUID_SLOWDOWN"
 	]
 
 	def get_attrs(self):

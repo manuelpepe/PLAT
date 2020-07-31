@@ -182,12 +182,12 @@ class BaseComponent(Sprite):
         """ Pos will remain inside boundries of grid. 
         Hitting an edge will stop the player. """
         x, y = xypair
-        if x < 0 or self.game.state.grid.width < x:
+        if x < 0 or self.game.state.obj.grid.width < x:
             self.velocity.x = 0
-        if y < 0 or self.game.state.grid.height < y:
+        if y < 0 or self.game.state.obj.grid.height < y:
             self.velocity.y = 0
-        x = min(max(x, 0), self.game.state.grid.width)
-        y = min(max(y, 0), self.game.state.grid.height)
+        x = min(max(x, 0), self.game.state.obj.grid.width)
+        y = min(max(y, 0), self.game.state.obj.grid.height)
         return x, y
 
     def get_attrs(self):
